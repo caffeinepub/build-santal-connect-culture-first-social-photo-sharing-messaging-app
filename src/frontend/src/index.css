@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 0.625rem;
+        
+        /* Earth-tone palette - Light mode */
+        --background: 0.98 0.01 45;
+        --foreground: 0.25 0.02 45;
+        --card: 1 0 0;
+        --card-foreground: 0.25 0.02 45;
+        --popover: 1 0 0;
+        --popover-foreground: 0.25 0.02 45;
+        
+        /* Primary: Warm terracotta/clay */
+        --primary: 0.55 0.12 35;
+        --primary-foreground: 0.98 0.01 45;
+        
+        /* Secondary: Soft sand */
+        --secondary: 0.92 0.02 55;
+        --secondary-foreground: 0.35 0.02 45;
+        
+        /* Muted: Light earth */
+        --muted: 0.95 0.01 50;
+        --muted-foreground: 0.50 0.02 45;
+        
+        /* Accent: Warm ochre */
+        --accent: 0.75 0.08 65;
+        --accent-foreground: 0.30 0.02 45;
+        
+        /* Destructive: Natural red clay */
+        --destructive: 0.55 0.18 25;
+        --destructive-foreground: 0.98 0.01 45;
+        
+        --border: 0.88 0.01 50;
+        --input: 0.88 0.01 50;
+        --ring: 0.55 0.12 35;
+        
+        /* Chart colors - earth tones */
+        --chart-1: 0.60 0.10 40;
+        --chart-2: 0.65 0.08 80;
+        --chart-3: 0.55 0.06 120;
+        --chart-4: 0.70 0.09 25;
+        --chart-5: 0.50 0.11 50;
+    }
+
+    .dark {
+        /* Dark mode - deeper earth tones */
+        --background: 0.20 0.02 40;
+        --foreground: 0.95 0.01 50;
+        --card: 0.25 0.02 40;
+        --card-foreground: 0.95 0.01 50;
+        --popover: 0.22 0.02 40;
+        --popover-foreground: 0.95 0.01 50;
+        
+        /* Primary: Lighter terracotta for dark mode */
+        --primary: 0.70 0.10 35;
+        --primary-foreground: 0.20 0.02 40;
+        
+        /* Secondary: Darker sand */
+        --secondary: 0.35 0.02 45;
+        --secondary-foreground: 0.95 0.01 50;
+        
+        /* Muted: Dark earth */
+        --muted: 0.30 0.02 45;
+        --muted-foreground: 0.70 0.02 50;
+        
+        /* Accent: Warm amber */
+        --accent: 0.60 0.10 50;
+        --accent-foreground: 0.95 0.01 50;
+        
+        /* Destructive: Brighter clay for visibility */
+        --destructive: 0.60 0.16 25;
+        --destructive-foreground: 0.95 0.01 50;
+        
+        --border: 0.35 0.02 45;
+        --input: 0.35 0.02 45;
+        --ring: 0.60 0.10 40;
+        
+        /* Chart colors - adjusted for dark mode */
+        --chart-1: 0.65 0.12 40;
+        --chart-2: 0.70 0.10 80;
+        --chart-3: 0.60 0.08 120;
+        --chart-4: 0.75 0.11 25;
+        --chart-5: 0.55 0.13 50;
+    }
+
+    * {
+        @apply border-border;
+    }
+    
+    body {
+        @apply bg-background text-foreground;
+        font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans', sans-serif;
+    }
+    
+    /* Unicode font support for Ol Chiki and other scripts */
+    @supports (font-variation-settings: normal) {
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Ol Chiki', sans-serif;
+        }
+    }
+}

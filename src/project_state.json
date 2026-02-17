@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Build an app with a Learning section where only Admin and Admin-assigned Teacher Badge users can add/upload courses; includes a visible Teacher Badge icon on teacher profiles.",
+  "architectural_notes": [
+    "Introduce role/permission checks for Learning section course creation (Admin or TeacherBadge=true).",
+    "Admin-only UI/actions to grant/revoke Teacher Badge for a user.",
+    "Teacher Badge visual spec: small badge styled as a red tick containing a mini book icon, clearly indicating teacher status."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-implement-the-teacher-badge-ui-as-a-small-red-tick-badge-containing-a-mini-book-icon-and-render-it-anywhere-the-app-currently-shows-a-verified-avatar-overlay-so-users-can-instantly-recognize-teachers",
+      "title": "Implement the Teacher Badge UI as a small red tick badge containing a mini book icon, and render it anywhere the app currently shows a verified avatar overlay (so users can instantly recognize teachers).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-admin-controls-in-the-existing-admin-user-moderation-ui-to-grant-and-revoke-teacher-badge-for-a-selected-user-with-clear-english-labels-and-success-error-toasts",
+      "title": "Add Admin controls in the existing Admin user moderation UI to grant and revoke Teacher Badge for a selected user, with clear English labels and success/error toasts.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-a-course-lesson-creation-entry-point-in-the-learning-section-ui-for-authorized-creators-admin-and-teacher-badge-holders-only-hide-or-disable-creation-ui-for-all-other-users",
+      "title": "Provide a course/lesson creation entry point in the Learning section UI for authorized creators (Admin and Teacher Badge holders only); hide or disable creation UI for all other users.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Add Teacher Badge system: Admin can grant/revoke badge; only Admin and badge holders can add/upload courses in the Learning section; show a Teacher Badge icon (red tick with mini book) on badged users.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add a Teacher Badge flag to user profiles that can be granted/revoked only by Admin, and expose it in public profile APIs so the frontend can render a Teacher Badge indicator for any user who has it.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Allow only Admin users and Teacher Badge holders to create/add Learning content (courses/lessons); all other users must be blocked from creating lessons/courses.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Teacher Badge Learning",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

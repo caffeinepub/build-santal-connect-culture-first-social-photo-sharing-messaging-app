@@ -1,0 +1,88 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Teacher Badge UI, admin moderation controls, and authorized Learning creation entry point",
+  "requirements": [
+    {
+      "id": "REQ-8",
+      "summary": "Create a TeacherBadge overlay (red tick with mini book icon) and render it wherever VerifiedAvatarOverlay is used when teacherBadge=true.",
+      "acceptanceCriteria": [
+        "A new TeacherBadge component exists with an accessible label/title (English), showing a red tick with a mini book icon inside.",
+        "VerifiedAvatarOverlay supports showing Teacher Badge as a small bottom-right overlay (similar placement/size to verified badge), without breaking existing verified overlay behavior.",
+        "When a user's public profile indicates Teacher Badge=true, the teacher badge overlay is visible on their avatar in the relevant UI surfaces that already use VerifiedAvatarOverlay.",
+        "When Teacher Badge=false, the badge is not rendered."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/common/TeacherBadge.tsx",
+          "operation": "create",
+          "description": "Add a reusable TeacherBadge overlay component that renders a small red tick badge with a mini book icon inside, including accessible English aria-label/title. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/common/VerifiedAvatarOverlay.tsx",
+          "operation": "modify",
+          "description": "Extend VerifiedAvatarOverlay props to accept teacherBadge (boolean) and render TeacherBadge as a small bottom-right overlay when true; ensure verified overlay still works and both indicators can coexist without visual breakage. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/posts/PostCard.tsx",
+          "operation": "modify",
+          "description": "Pass teacherBadge from the author's PublicProfile into VerifiedAvatarOverlay (and, where applicable, alongside existing verified indicators) so teacher status is visible on post author avatars when teacherBadge=true. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/ProfilePage.tsx",
+          "operation": "modify",
+          "description": "Pass teacherBadge from the viewed user's public profile into VerifiedAvatarOverlay on the profile header so teachers show the overlay when teacherBadge=true. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "summary": "Add AdminUserModerationPanel controls to grant/revoke Teacher Badge with status display and success/error toasts, including React Query cache invalidation.",
+      "acceptanceCriteria": [
+        "AdminUserModerationPanel shows the current Teacher Badge status for the selected user (e.g., via a badge/label).",
+        "AdminUserModerationPanel provides a button to grant Teacher Badge if the user does not have it and a button to revoke it if the user has it.",
+        "Grant/revoke actions call the new backend methods and invalidate relevant React Query caches (user profile, public profile, admin user list, and any lists that render the badge).",
+        "Non-admin users cannot access these controls (AdminPage is already guarded; keep that behavior)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query mutation hooks for adminGrantTeacherBadge/adminRevokeTeacherBadge that call the backend and invalidate caches for: userProfile, publicProfile, adminAllUserProfiles, userSearch, posts, channelPosts, eventPosts, feedStoryViews (and any other lists that surface avatars/badges). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminUserModerationPanel.tsx",
+          "operation": "modify",
+          "description": "Display the selected user's current Teacher Badge status (English label) and add Grant/Revoke Teacher Badge buttons wired to the new hooks; show success/error toasts using existing toast + normalizeBackendError patterns. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "summary": "Add an authorized (Admin or Teacher Badge) lesson/course creation entry point on LearnPage and hide it for all other users; refresh lessons list on success.",
+      "acceptanceCriteria": [
+        "LearnPage shows an 'Add Lesson' / 'Add Course' action only when the caller is Admin or has Teacher Badge.",
+        "Submitting the creation form successfully creates the lesson/course and refreshes the lessons list.",
+        "Unauthorized users do not see lesson/course creation controls on LearnPage (and are still blocked by backend if they attempt to call the API).",
+        "All user-facing text added for this feature is in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a creator-facing addLesson mutation hook that calls the non-admin addLesson backend function and invalidates the lessons query used by LearnPage (and any dependent lesson detail queries if applicable). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/learn/LearnCreateContentDialog.tsx",
+          "operation": "create",
+          "description": "Create a Learning section dialog/component providing an English-labeled 'Add Lesson' and 'Add Course' entry point (with course mapping to the existing lesson creation capability until a distinct course capability exists), including form validation, submit loading state, and success/error toasts. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/LearnPage.tsx",
+          "operation": "modify",
+          "description": "Gate the creation entry point using useIsCallerAdmin and the caller's profile publicProfile.teacherBadge; render the LearnCreateContentDialog only for authorized creators, and ensure successful creation refreshes the visible lessons list. Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

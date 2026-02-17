@@ -1,0 +1,77 @@
+{
+  "kind": "build_request",
+  "title": "Restore Admin Verified Badge Control and Admin Message Access",
+  "projectName": "Teacher Badge Learning",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Restore the Admin capability to assign the blue-tick “Verified” status to a selected user from the Admin user moderation UI, ensuring the control is visible and functional and that verification is reflected anywhere verified badges appear (profile, posts, stories, avatars).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-5",
+          "msg-9"
+        ],
+        "quotes": [
+          "Hat gaya hai , wapas lagani hai.",
+          "Hn"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When an Admin selects a user in Admin > Users and clicks the Verified action, the backend successfully marks the user as verified and returns success.",
+        "After verifying a user, the Admin UI updates to show the user as Verified without requiring a full page reload.",
+        "Verified indicators (blue-tick) render consistently for that user wherever the app currently shows verified status (e.g., profile header/avatar overlays, post author rows, story headers).",
+        "Non-admin callers cannot invoke the verification action; the backend rejects the call with an authorization error."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Restore Admin “message access” by implementing an Admin-only, read-only view of a selected user’s conversations and message history in the Admin user management flow (replacing the current placeholder that says conversations cannot be viewed).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-4",
+          "msg-9",
+          "msg-10"
+        ],
+        "quotes": [
+          "Blue tick ka verified badge dene wala admin ka se hat gya aur massage access karne Wala bhi wala bhi",
+          "Hn",
+          "Build kar dijiye"
+        ]
+      },
+      "acceptanceCriteria": [
+        "In Admin > Users, after selecting a user, the “User Conversations” panel loads a list of that user’s conversations (read-only).",
+        "An Admin can open a conversation and view the message history (including text and stickers/media where applicable) in a read-only format.",
+        "The Admin cannot send, edit, or delete messages from this view (no compose UI, and backend prevents write actions for this feature).",
+        "Non-admin callers cannot fetch another user’s conversations/messages; the backend rejects the call with an authorization error.",
+        "If a user has no conversations, the panel shows an English empty state indicating there are no conversations to display."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if an upgrade is required for state compatibility.",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead).",
+    "All user-facing text introduced or changed by this request must be in English."
+  ],
+  "nonGoals": [
+    "Implementing real-time messaging or live admin monitoring.",
+    "Allowing admins to send messages as a user or impersonate users.",
+    "Adding third-party authentication providers (only Internet Identity is supported)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

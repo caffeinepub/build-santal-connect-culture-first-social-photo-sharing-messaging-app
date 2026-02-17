@@ -1,0 +1,47 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-restore-the-admin-capability-to-assign-the-blue-tick-verified-status-to-a-selected-user-from-the-admin-user-moderation-ui-ensuring-the-control-is-visible-and-functional-and-that-verification-is-reflected-anywhere-verified-badges-appear-profile-posts-stories-avatars",
+      "featureTitle": "Restore the Admin capability to assign the blue-tick “Verified” status to a selected user from the Admin user moderation UI, ensuring the control is visible and functional and that verification is reflected anywhere verified badges appear (profile, posts, stories, avatars).",
+      "files": [
+        "frontend/src/components/admin/AdminUserModerationPanel.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-restore-admin-message-access-by-implementing-an-admin-only-read-only-view-of-a-selected-user-s-conversations-and-message-history-in-the-admin-user-management-flow-replacing-the-current-placeholder-that-says-conversations-cannot-be-viewed",
+      "featureTitle": "Restore Admin “message access” by implementing an Admin-only, read-only view of a selected user’s conversations and message history in the Admin user management flow (replacing the current placeholder that says conversations cannot be viewed).",
+      "files": [
+        "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

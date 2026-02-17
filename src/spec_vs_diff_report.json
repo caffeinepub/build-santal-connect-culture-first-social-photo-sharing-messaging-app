@@ -1,0 +1,84 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-17T16:55:19.119Z",
+  "summary": "REQ-1 and REQ-2 are only partially addressed on the frontend UI side; the diff summary does not show the necessary backend admin-only endpoints (or authorization enforcement) to actually apply verification or fetch user conversations/messages. The diff also introduces several unrelated features (e.g., Studies module, create-reels route, profile tag fields) not requested in the BuildRequest.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Backend admin-only action to mark a selected user as Verified (blue-tick), returning success, and rejecting non-admin callers with an authorization error.",
+      "reason": "The frontend references an admin verification mutation (useAdminApplyVerified), but the backend diff shown (backend/main.mo truncated) contains no visible method implementing an admin-only 'apply verified' operation or its authorization checks.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserModerationPanel.tsx",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "After verifying a user, the Admin UI updates to show the user as Verified without a full page reload.",
+      "reason": "AdminUserModerationPanel triggers a mutation and shows a toast, but the diff excerpt does not show cache invalidation/refetch wiring in useAdminApplyVerified (the relevant part of frontend/src/hooks/useQueries.ts is truncated).",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserModerationPanel.tsx",
+        "frontend/src/hooks/useQueries.ts (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Admin-only, read-only view to load a selected user’s conversations and open a conversation to view message history; non-admin callers must be rejected by the backend with an authorization error.",
+      "reason": "The new AdminUserConversationsPanel calls useAdminGetUserConversations/useAdminGetConversationMessages, but the diff provides no evidence of backend endpoints for fetching another user’s conversations/messages with admin-only authorization enforcement.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Replace the existing placeholder ('conversations cannot be viewed') with a working conversations/messages panel; if no conversations exist, show an English empty state indicating there are no conversations to display.",
+      "reason": "AdminUserConversationsPanel contains a 'backendNotAvailable' branch that still displays an unavailability placeholder ('Conversation viewing functionality is not available. Admin cannot access user conversations at this time.') rather than a working view. The 'No conversations found' empty state exists, but it is separate from the unavailability placeholder, and the unavailability detection appears to treat an empty list as 'backend not available'.",
+      "evidence": [
+        "frontend/src/components/admin/AdminUserConversationsPanel.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Added/expanded 'Studies' functionality including admin-only createStudy/getStudy/getStudyIds/joinStudy and associated types.",
+      "reason": "The BuildRequest only concerns admin verified badge control and admin read-only message access; studies are unrelated.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "description": "Introduced/expanded user profile tag fields (musicianTag, painterTag, influencerTag, dancerTag, singerTag) and a migration file to handle new types.",
+      "reason": "The BuildRequest does not request new profile tag fields or related migrations; it only requests restoring verified badge control and admin message access.",
+      "evidence": [
+        "backend/migration.mo (truncated)",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "description": "Added a fixed admin principal placeholder (\"aaaaa-aa\") in backend.",
+      "reason": "The BuildRequest does not request changing admin determination logic or adding a hardcoded admin principal; it only requires non-admin callers be rejected for the new admin actions.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "description": "Frontend routing/navigation changes including a new /create-reels route and 'Reels' tab replacement (per provided frontend summaries).",
+      "reason": "Not requested by REQ-1/REQ-2; this is unrelated feature work.",
+      "evidence": [
+        "frontend-file-summaries.txt (truncated)"
+      ]
+    }
+  ],
+  "confidence": 0.64,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
+    "frontend/src/components/admin/AdminUserModerationPanel.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "project_state.json"
+  ]
+}
