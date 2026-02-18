@@ -230,16 +230,16 @@ export function useIsCallerAdmin() {
 }
 
 // Admin Mutations
-export function useAdminApplyVerified() {
+export function useAdminSetVerified() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (user: Principal) => {
+    mutationFn: async ({ user, verified }: { user: Principal; verified: boolean }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.adminApplyVerified(user);
+      return actor.adminSetVerified(user, verified);
     },
-    onSuccess: (_, user) => {
+    onSuccess: (_, { user }) => {
       // Invalidate the specific user's profile
       queryClient.invalidateQueries({ queryKey: ['userProfile', user.toString()] });
       // Invalidate public profile for the user
@@ -350,22 +350,17 @@ export function useAdminIsUserBanned(user: Principal | null) {
 }
 
 // Admin Conversation Queries (read-only)
-export function useAdminGetUserConversations(user: Principal | null) {
+export function useAdminGetConversationList(user: Principal | null) {
   const { actor, isFetching: actorFetching } = useActor();
 
-  return useQuery<Array<{ otherUser: Principal; lastMessage?: string; lastMessageTime?: bigint }>>({
-    queryKey: ['adminUserConversations', user?.toString()],
+  return useQuery<Principal[]>({
+    queryKey: ['adminConversationList', user?.toString()],
     queryFn: async () => {
       if (!actor || !user) return [];
       try {
-        // Backend method not yet implemented - using type assertion for future compatibility
-        const actorAny = actor as any;
-        if (typeof actorAny.adminGetUserConversations === 'function') {
-          return await actorAny.adminGetUserConversations(user);
-        }
-        return [];
+        return await actor.adminGetConversationList(user);
       } catch (error) {
-        console.error(`Failed to fetch conversations for ${user.toString()}:`, error);
+        console.error(`Failed to fetch conversation list for ${user.toString()}:`, error);
         return [];
       }
     },
@@ -374,26 +369,21 @@ export function useAdminGetUserConversations(user: Principal | null) {
   });
 }
 
-export function useAdminGetConversationMessages(user: Principal | null, otherUser: Principal | null) {
+export function useAdminGetConversation(targetUser: Principal | null, otherUser: Principal | null) {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<ConversationView | null>({
-    queryKey: ['adminConversationMessages', user?.toString(), otherUser?.toString()],
+    queryKey: ['adminConversation', targetUser?.toString(), otherUser?.toString()],
     queryFn: async () => {
-      if (!actor || !user || !otherUser) return null;
+      if (!actor || !targetUser || !otherUser) return null;
       try {
-        // Backend method not yet implemented - using type assertion for future compatibility
-        const actorAny = actor as any;
-        if (typeof actorAny.adminGetConversation === 'function') {
-          return await actorAny.adminGetConversation(user, otherUser);
-        }
-        return null;
+        return await actor.adminGetConversation(targetUser, otherUser);
       } catch (error) {
-        console.error(`Failed to fetch conversation messages:`, error);
+        console.error(`Failed to fetch conversation:`, error);
         return null;
       }
     },
-    enabled: !!actor && !actorFetching && !!user && !!otherUser,
+    enabled: !!actor && !actorFetching && !!targetUser && !!otherUser,
     retry: false,
   });
 }
@@ -533,7 +523,7 @@ export function useGetChannelPosts(channelName: string) {
       try {
         return await actor.getChannelPosts(channelName);
       } catch (error) {
-        console.error(`Failed to fetch posts for channel ${channelName}:`, error);
+        console.error(`Failed to fetch channel posts for ${channelName}:`, error);
         return [];
       }
     },
@@ -553,47 +543,12 @@ export function useAdminAddPostToChannel() {
     },
     onSuccess: (_, { channelName }) => {
       queryClient.invalidateQueries({ queryKey: ['channelPosts', channelName] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['channelPosts'] });
     },
   });
 }
 
-// Messages
-export function useGetConversation(otherUser: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<ConversationView | null>({
-    queryKey: ['conversation', otherUser?.toString()],
-    queryFn: async () => {
-      if (!actor || !otherUser) return null;
-      try {
-        return await actor.getConversation(otherUser);
-      } catch (error) {
-        console.error(`Failed to fetch conversation with ${otherUser.toString()}:`, error);
-        return null;
-      }
-    },
-    enabled: !!actor && !actorFetching && !!otherUser,
-    retry: false,
-  });
-}
-
-export function useSendMessage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ receiver, content }: { receiver: Principal; content: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.sendMessage(receiver, content);
-    },
-    onSuccess: (_, { receiver }) => {
-      queryClient.invalidateQueries({ queryKey: ['conversation', receiver.toString()] });
-    },
-  });
-}
-
-// Learning Corner
+// Lessons
 export function useGetAllLessons() {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -632,7 +587,7 @@ export function useGetLesson(title: string) {
   });
 }
 
-export function useAddLesson() {
+export function useAdminAddLesson() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
@@ -645,10 +600,6 @@ export function useAddLesson() {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
     },
   });
-}
-
-export function useAdminAddLesson() {
-  return useAddLesson();
 }
 
 // Events
@@ -701,6 +652,76 @@ export function useAdminAddEvent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
+}
+
+// Stories
+export function useGetFeedStoryViews() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<StoryView[]>({
+    queryKey: ['feedStoryViews'],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getFeedStoryViews();
+      } catch (error) {
+        console.error('Failed to fetch story views:', error);
+        return [];
+      }
+    },
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+}
+
+export function useCreateStory() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ content, mediaType }: { content: ExternalBlob; mediaType: PostMediaType }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createStory(content, mediaType);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
+    },
+  });
+}
+
+// Messaging
+export function useGetConversation(otherUser: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<ConversationView | null>({
+    queryKey: ['conversation', otherUser?.toString()],
+    queryFn: async () => {
+      if (!actor || !otherUser) return null;
+      try {
+        return await actor.getConversation(otherUser);
+      } catch (error) {
+        console.error(`Failed to fetch conversation with ${otherUser.toString()}:`, error);
+        return null;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!otherUser,
+    retry: false,
+  });
+}
+
+export function useSendMessage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ receiver, content }: { receiver: Principal; content: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.sendMessage(receiver, content);
+    },
+    onSuccess: (_, { receiver }) => {
+      queryClient.invalidateQueries({ queryKey: ['conversation', receiver.toString()] });
     },
   });
 }
@@ -796,40 +817,5 @@ export function useGetFollowing(target: Principal | null) {
     },
     enabled: !!actor && !actorFetching && !!target,
     retry: false,
-  });
-}
-
-// Stories
-export function useGetFeedStoryViews() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<StoryView[]>({
-    queryKey: ['feedStoryViews'],
-    queryFn: async () => {
-      if (!actor) return [];
-      try {
-        return await actor.getFeedStoryViews();
-      } catch (error) {
-        console.error('Failed to fetch story views:', error);
-        return [];
-      }
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-}
-
-export function useCreateStory() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ content, mediaType }: { content: ExternalBlob; mediaType: PostMediaType }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createStory(content, mediaType);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
-    },
   });
 }

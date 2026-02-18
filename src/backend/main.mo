@@ -10,13 +10,15 @@ import Set "mo:core/Set";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 
+
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
+// Add migration clause - crucial for stability
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -25,7 +27,6 @@ actor {
   // Define the fixed admin principal (replace with actual admin principal in deployment)
   let fixedAdminPrincipals = Set.singleton(Principal.fromText("aaaaa-aa"));
 
-  // Constants
   let storyExpiryDuration : Int = 24 * 60 * 60 * 1000000000; // 24 hours in nanoseconds
 
   // Story type
@@ -74,6 +75,90 @@ actor {
 
   // Follow system
   let followingMap = Map.empty<Principal, Set.Set<Principal>>();
+
+  // --- Studies Module ---
+  public type Study = {
+    id : Text;
+    name : Text;
+    participants : Set.Set<Principal>;
+    materials : Map.Map<Text, Storage.ExternalBlob>;
+    schedule : ?Text;
+    instructor : Principal; // Added field for instructor
+  };
+
+  public type StudyView = {
+    id : Text;
+    name : Text;
+    participants : [Principal];
+    materials : [(Text, Storage.ExternalBlob)];
+    schedule : ?Text;
+    instructor : Principal; // Added field for instructor
+  };
+
+  let studies = Map.empty<Text, Study>();
+  var nextStudyId = 0;
+
+  // Convert Study to immutable view
+  func toStudyView(study : Study) : StudyView {
+    {
+      study with
+      participants = study.participants.values().toArray();
+      materials = study.materials.toArray();
+    };
+  };
+
+  public shared ({ caller }) func createStudy(name : Text, materials : [(Text, Storage.ExternalBlob)], schedule : Text, instructor : Principal) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can create studies");
+    };
+
+    let studyId = nextStudyId.toText();
+    let newStudy : Study = {
+      id = studyId;
+      name;
+      participants = Set.empty<Principal>();
+      materials = Map.fromIter<Text, Storage.ExternalBlob>(materials.values());
+      schedule = ?schedule;
+      instructor;
+    };
+    studies.add(studyId, newStudy);
+    nextStudyId += 1;
+    studyId;
+  };
+
+  // Query function returns stable immutable view
+  public query ({ caller }) func getStudy(studyId : Text) : async ?StudyView {
+    switch (studies.get(studyId)) {
+      case (null) { null };
+      case (?study) { ?toStudyView(study) };
+    };
+  };
+
+  public query ({ caller }) func getStudyIds() : async [Text] {
+    studies.keys().toArray();
+  };
+
+  public shared ({ caller }) func joinStudy(studyId : Text) : async () {
+    switch (studies.get(studyId)) {
+      case (null) { Runtime.trap("Study not found") };
+      case (?study) {
+        study.participants.add(caller);
+      };
+    };
+  };
+
+  public shared ({ caller }) func addMaterial(studyId : Text, materialId : Text, material : Storage.ExternalBlob) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can add materials");
+    };
+
+    switch (studies.get(studyId)) {
+      case (null) { Runtime.trap("Study not found") };
+      case (?study) {
+        study.materials.add(materialId, material);
+      };
+    };
+  };
 
   public query ({ caller }) func isFollowing(target : Principal) : async Bool {
     switch (followingMap.get(caller)) {
@@ -340,7 +425,7 @@ actor {
   // --- End Follow System Changes ---
 
   // Admin only: Apply verified status (blue tick)
-  public shared ({ caller }) func adminApplyVerified(user : Principal) : async () {
+  public shared ({ caller }) func adminSetVerified(user : Principal, verified : Bool) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can verify users");
     };
@@ -350,7 +435,7 @@ actor {
       case (?profile) {
         let newProfile : UserProfile = {
           profile with publicProfile = {
-            profile.publicProfile with verified = true;
+            profile.publicProfile with verified;
           };
         };
         userProfiles.add(user, newProfile);
@@ -671,6 +756,12 @@ actor {
     };
   };
 
+  public type ConversationSummary = {
+    participant : Principal;
+    lastMessageTime : Time.Time;
+    lastMessageSnippet : Text;
+  };
+
   public shared ({ caller }) func sendMessage(receiver : Principal, content : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can send messages");
@@ -736,6 +827,49 @@ actor {
     };
   };
 
+  // Admin-only: Get entire conversation (no check for "Is participant")
+  public query ({ caller }) func adminGetConversation(_adminTargetUser : Principal, otherUser : Principal) : async ?ConversationView {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can access any conversation");
+    };
+
+    switch (conversations.get(getConversationId(_adminTargetUser, otherUser))) {
+      case (null) { null };
+      case (?conversation) { ?toConversationView(conversation) };
+    };
+  };
+
+  // Util functions to allow admin to get full conversation list for a user
+  public query ({ caller }) func adminGetConversationList(targetUser : Principal) : async [Principal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can access any conversation");
+    };
+
+    let result = List.empty<Principal>();
+    for ((convId, conv) in conversations.entries()) {
+      // Only include conversations where targetUser is a participant
+      let isParticipant = conv.participants.find(
+        func(p) { p == targetUser }
+      );
+      switch (isParticipant) {
+        case (?p) {
+          if (p == targetUser) {
+            let recipient = conv.participants.find(
+              func(p) { p != targetUser }
+            );
+            switch (recipient) {
+              case (null) {};
+              case (?r) { result.add(r) };
+            };
+          };
+        };
+        case (null) {};
+      };
+    };
+    result.toArray();
+  };
+
+  // Util get conversation id
   func getConversationId(user1 : Principal, user2 : Principal) : Text {
     let id1 = user1.toText();
     let id2 = user2.toText();
@@ -928,25 +1062,4 @@ actor {
     nextPostId += 1;
     postId;
   };
-
-  public query ({ caller }) func getEventPosts(eventName : Text) : async [PostView] {
-    // Public event posts - accessible to all including guests
-    switch (eventPosts.get(eventName)) {
-      case (null) { Array.empty<PostView>() };
-      case (?postIdsList) {
-        let postViews = List.empty<PostView>();
-        for (postId in postIdsList.values()) {
-          switch (posts.get(postId)) {
-            case (null) {};
-            case (?post) {
-              postViews.add(toPostView(postId, post));
-            };
-          };
-        };
-        postViews.toArray();
-      };
-    };
-  };
-
 };
-

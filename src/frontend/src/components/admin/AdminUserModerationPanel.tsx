@@ -17,7 +17,7 @@ import { Loader2, CheckCircle2, Shield, Ban, UserCheck, Phone, MapPin, BookOpen 
 import {
   useGetUserProfile,
   useCheckRole,
-  useAdminApplyVerified,
+  useAdminSetVerified,
   useAdminBanUser,
   useAdminUnbanUser,
   useAdminIsUserBanned,
@@ -38,7 +38,7 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
   const { data: role, isLoading: roleLoading } = useCheckRole(userPrincipal);
   const { data: isBanned, isLoading: banStatusLoading } = useAdminIsUserBanned(userPrincipal);
 
-  const applyVerified = useAdminApplyVerified();
+  const setVerified = useAdminSetVerified();
   const banUser = useAdminBanUser();
   const unbanUser = useAdminUnbanUser();
   const grantTeacherBadge = useAdminGrantTeacherBadge();
@@ -52,17 +52,13 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
   const isAdmin = role === UserRole.admin;
 
   const handleToggleVerified = async () => {
-    if (isVerified) {
-      toast.info('Unverify feature not yet implemented');
-      return;
-    }
-
     try {
-      await applyVerified.mutateAsync(userPrincipal);
-      toast.success(`User has been verified!`);
+      await setVerified.mutateAsync({ user: userPrincipal, verified: !isVerified });
+      toast.success(isVerified ? 'User verification revoked successfully!' : 'User has been verified successfully!');
     } catch (error) {
-      console.error('Verify user error:', error);
-      toast.error(normalizeBackendError(error));
+      console.error('Toggle verified error:', error);
+      const errorMessage = normalizeBackendError(error);
+      toast.error(`Failed to update verification: ${errorMessage}`);
     }
   };
 
@@ -77,7 +73,8 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
       }
     } catch (error) {
       console.error('Teacher badge toggle error:', error);
-      toast.error(normalizeBackendError(error));
+      const errorMessage = normalizeBackendError(error);
+      toast.error(`Failed to update teacher badge: ${errorMessage}`);
     }
   };
 
@@ -88,7 +85,8 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
       setShowBanDialog(false);
     } catch (error) {
       console.error('Ban user error:', error);
-      toast.error(normalizeBackendError(error));
+      const errorMessage = normalizeBackendError(error);
+      toast.error(`Failed to ban user: ${errorMessage}`);
     }
   };
 
@@ -99,7 +97,8 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
       setShowUnbanDialog(false);
     } catch (error) {
       console.error('Unban user error:', error);
-      toast.error(normalizeBackendError(error));
+      const errorMessage = normalizeBackendError(error);
+      toast.error(`Failed to unban user: ${errorMessage}`);
     }
   };
 
@@ -178,22 +177,20 @@ export default function AdminUserModerationPanel({ userPrincipal }: AdminUserMod
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <div className="flex gap-2">
-              <Button
-                variant={isVerified ? "outline" : "default"}
-                size="sm"
-                onClick={handleToggleVerified}
-                disabled={applyVerified.isPending}
-                className="flex-1"
-              >
-                {applyVerified.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                )}
-                {isVerified ? 'Verified' : 'Apply Verified'}
-              </Button>
-            </div>
+            <Button
+              variant={isVerified ? "outline" : "default"}
+              size="sm"
+              onClick={handleToggleVerified}
+              disabled={setVerified.isPending}
+              className="w-full"
+            >
+              {setVerified.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+              )}
+              {isVerified ? 'Revoke Verified' : 'Apply Verified'}
+            </Button>
 
             <Button
               variant={hasTeacherBadge ? "outline" : "default"}

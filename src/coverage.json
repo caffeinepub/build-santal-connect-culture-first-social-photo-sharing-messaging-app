@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T16:55:19.122Z",
+  "generatedAt": "2026-02-18T20:11:37.495Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,48 +12,40 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Restore the Admin capability to assign the blue-tick “Verified” status to a selected user from the Admin user moderation UI, ensuring the control is visible and functional and that verification is reflected anywhere verified badges appear (profile, posts, stories, avatars).",
+        "summary": "Remove the ProfileSetupModal component and all its imports from the application",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/AdminUserModerationPanel.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/common/VerifiedAvatarOverlay.tsx"
+          "frontend/src/components/profile/ProfileSetupModal.tsx",
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/pages/FeedPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/AdminUserModerationPanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/profile/ProfileSetupModal.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Restore Admin “message access” by implementing an Admin-only, read-only view of a selected user’s conversations and message history in the Admin user management flow (replacing the current placeholder that says conversations cannot be viewed).",
+        "summary": "Remove any logic that triggers or checks for profile completion status",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
-          "frontend/src/components/admin/AdminUsersPanel.tsx"
+          "frontend/src/components/layout/AppLayout.tsx",
+          "frontend/src/pages/FeedPage.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminUserConversationsPanel.tsx"
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
-    "frontend/src/components/admin/AdminUserModerationPanel.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/profile/ProfileSetupModal.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

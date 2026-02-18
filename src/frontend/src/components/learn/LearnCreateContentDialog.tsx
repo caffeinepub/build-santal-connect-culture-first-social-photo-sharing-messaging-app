@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Plus } from 'lucide-react';
-import { useAddLesson } from '../../hooks/useQueries';
+import { useAdminAddLesson } from '../../hooks/useQueries';
 import { toast } from 'sonner';
 import { normalizeBackendError } from '../../utils/backendErrors';
 
@@ -18,7 +18,7 @@ export default function LearnCreateContentDialog({ onSuccess }: LearnCreateConte
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
-  const addLesson = useAddLesson();
+  const addLesson = useAdminAddLesson();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

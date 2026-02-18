@@ -21,6 +21,15 @@ export const _CaffeineStorageRefillResult = IDL.Record({
 });
 export const Time = IDL.Int;
 export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const Message = IDL.Record({
+  'content' : IDL.Text,
+  'sender' : IDL.Principal,
+  'timestamp' : Time,
+});
+export const ConversationView = IDL.Record({
+  'participants' : IDL.Vec(IDL.Principal),
+  'messages' : IDL.Vec(Message),
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -80,15 +89,6 @@ export const PostView = IDL.Record({
   'mediaType' : PostMediaType,
   'comments' : IDL.Vec(Comment),
   'eventName' : IDL.Opt(IDL.Text),
-});
-export const Message = IDL.Record({
-  'content' : IDL.Text,
-  'sender' : IDL.Principal,
-  'timestamp' : Time,
-});
-export const ConversationView = IDL.Record({
-  'participants' : IDL.Vec(IDL.Principal),
-  'messages' : IDL.Vec(Message),
 });
 export const Story = IDL.Record({
   'id' : IDL.Text,
@@ -152,11 +152,21 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
-  'adminApplyVerified' : IDL.Func([IDL.Principal], [], []),
   'adminBanUser' : IDL.Func([IDL.Principal], [], []),
+  'adminGetConversation' : IDL.Func(
+      [IDL.Principal, IDL.Principal],
+      [IDL.Opt(ConversationView)],
+      ['query'],
+    ),
+  'adminGetConversationList' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(IDL.Principal)],
+      ['query'],
+    ),
   'adminGrantTeacherBadge' : IDL.Func([IDL.Principal], [], []),
   'adminIsUserBanned' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'adminRevokeTeacherBadge' : IDL.Func([IDL.Principal], [], []),
+  'adminSetVerified' : IDL.Func([IDL.Principal, IDL.Bool], [], []),
   'adminUnbanUser' : IDL.Func([IDL.Principal], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'checkRole' : IDL.Func([IDL.Principal], [IDL.Opt(UserRole)], ['query']),
@@ -252,6 +262,15 @@ export const idlFactory = ({ IDL }) => {
   });
   const Time = IDL.Int;
   const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const Message = IDL.Record({
+    'content' : IDL.Text,
+    'sender' : IDL.Principal,
+    'timestamp' : Time,
+  });
+  const ConversationView = IDL.Record({
+    'participants' : IDL.Vec(IDL.Principal),
+    'messages' : IDL.Vec(Message),
+  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -305,15 +324,6 @@ export const idlFactory = ({ IDL }) => {
     'mediaType' : PostMediaType,
     'comments' : IDL.Vec(Comment),
     'eventName' : IDL.Opt(IDL.Text),
-  });
-  const Message = IDL.Record({
-    'content' : IDL.Text,
-    'sender' : IDL.Principal,
-    'timestamp' : Time,
-  });
-  const ConversationView = IDL.Record({
-    'participants' : IDL.Vec(IDL.Principal),
-    'messages' : IDL.Vec(Message),
   });
   const Story = IDL.Record({
     'id' : IDL.Text,
@@ -381,11 +391,21 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'adminApplyVerified' : IDL.Func([IDL.Principal], [], []),
     'adminBanUser' : IDL.Func([IDL.Principal], [], []),
+    'adminGetConversation' : IDL.Func(
+        [IDL.Principal, IDL.Principal],
+        [IDL.Opt(ConversationView)],
+        ['query'],
+      ),
+    'adminGetConversationList' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(IDL.Principal)],
+        ['query'],
+      ),
     'adminGrantTeacherBadge' : IDL.Func([IDL.Principal], [], []),
     'adminIsUserBanned' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'adminRevokeTeacherBadge' : IDL.Func([IDL.Principal], [], []),
+    'adminSetVerified' : IDL.Func([IDL.Principal, IDL.Bool], [], []),
     'adminUnbanUser' : IDL.Func([IDL.Principal], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'checkRole' : IDL.Func([IDL.Principal], [IDL.Opt(UserRole)], ['query']),

@@ -129,11 +129,16 @@ export interface _SERVICE {
     [string, Time, string, [] | [string]],
     undefined
   >,
-  'adminApplyVerified' : ActorMethod<[Principal], undefined>,
   'adminBanUser' : ActorMethod<[Principal], undefined>,
+  'adminGetConversation' : ActorMethod<
+    [Principal, Principal],
+    [] | [ConversationView]
+  >,
+  'adminGetConversationList' : ActorMethod<[Principal], Array<Principal>>,
   'adminGrantTeacherBadge' : ActorMethod<[Principal], undefined>,
   'adminIsUserBanned' : ActorMethod<[Principal], boolean>,
   'adminRevokeTeacherBadge' : ActorMethod<[Principal], undefined>,
+  'adminSetVerified' : ActorMethod<[Principal, boolean], undefined>,
   'adminUnbanUser' : ActorMethod<[Principal], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'checkRole' : ActorMethod<[Principal], [] | [UserRole]>,

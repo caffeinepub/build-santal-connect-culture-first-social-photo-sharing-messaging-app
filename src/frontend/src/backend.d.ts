@@ -14,6 +14,14 @@ export class ExternalBlob {
     static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
     withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
 }
+export interface StudyView {
+    id: string;
+    participants: Array<Principal>;
+    instructor: Principal;
+    name: string;
+    materials: Array<[string, ExternalBlob]>;
+    schedule?: string;
+}
 export type Time = bigint;
 export interface Comment {
     content: string;
@@ -103,19 +111,23 @@ export interface backendInterface {
     addComment(postId: string, content: string): Promise<void>;
     addEvent(name: string, date: Time, description: string, location: string | null): Promise<void>;
     addLesson(title: string, content: string, media: ExternalBlob | null): Promise<void>;
+    addMaterial(studyId: string, materialId: string, material: ExternalBlob): Promise<void>;
     addToChannel(channelName: string, postId: string): Promise<void>;
     adminAddEvent(name: string, date: Time, description: string, location: string | null): Promise<void>;
-    adminApplyVerified(user: Principal): Promise<void>;
     adminBanUser(user: Principal): Promise<void>;
+    adminGetConversation(_adminTargetUser: Principal, otherUser: Principal): Promise<ConversationView | null>;
+    adminGetConversationList(targetUser: Principal): Promise<Array<Principal>>;
     adminGrantTeacherBadge(user: Principal): Promise<void>;
     adminIsUserBanned(user: Principal): Promise<boolean>;
     adminRevokeTeacherBadge(user: Principal): Promise<void>;
+    adminSetVerified(user: Principal, verified: boolean): Promise<void>;
     adminUnbanUser(user: Principal): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     checkRole(target: Principal): Promise<UserRole | null>;
     createEventPost(eventName: string, caption: string, media: ExternalBlob | null, mediaType: PostMediaType): Promise<string>;
     createPost(caption: string, media: ExternalBlob | null, mediaType: PostMediaType): Promise<string>;
     createStory(content: ExternalBlob, mediaType: PostMediaType): Promise<string>;
+    createStudy(name: string, materials: Array<[string, ExternalBlob]>, schedule: string, instructor: Principal): Promise<string>;
     expireStories(): Promise<void>;
     followUser(target: Principal): Promise<void>;
     getAllEvents(): Promise<Array<Event>>;
@@ -125,17 +137,19 @@ export interface backendInterface {
     getChannelPosts(channelName: string): Promise<Array<PostView>>;
     getConversation(otherUser: Principal): Promise<ConversationView | null>;
     getEvent(name: string): Promise<Event | null>;
-    getEventPosts(eventName: string): Promise<Array<PostView>>;
     getFeedStories(): Promise<Array<Story>>;
     getFeedStoryViews(): Promise<Array<StoryView>>;
     getFollowers(target: Principal): Promise<Array<Principal>>;
     getFollowing(target: Principal): Promise<Array<Principal>>;
     getLesson(title: string): Promise<Lesson | null>;
     getPosts(): Promise<Array<PostView>>;
+    getStudy(studyId: string): Promise<StudyView | null>;
+    getStudyIds(): Promise<Array<string>>;
     getUserProfile(target: Principal): Promise<UserProfile | null>;
     getUserPublicProfile(target: Principal): Promise<PublicProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     isFollowing(target: Principal): Promise<boolean>;
+    joinStudy(studyId: string): Promise<void>;
     likePost(postId: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     searchUsersByDisplayName(search: string): Promise<Array<UserSearchResult>>;

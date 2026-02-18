@@ -1,4 +1,4 @@
-import { createRouter, createRoute, createRootRoute, RouterProvider, Outlet, useRouter } from '@tanstack/react-router';
+import { createRouter, createRoute, createRootRoute, RouterProvider, Outlet } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import AppLayout from './components/layout/AppLayout';
@@ -19,21 +19,11 @@ import ProfilePage from './pages/ProfilePage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import AdminPage from './pages/AdminPage';
 import LoginPanel from './components/auth/LoginPanel';
-import ProfileSetupModal from './components/profile/ProfileSetupModal';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from './hooks/useQueries';
 
 function RootLayout() {
   const { identity, isInitializing } = useInternetIdentity();
   const isAuthenticated = !!identity;
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
-  const router = useRouter();
-  
-  // Check if current route is /admin or starts with /admin
-  const isAdminRoute = router.state.location.pathname === '/admin' || router.state.location.pathname.startsWith('/admin/');
-  
-  // Suppress profile setup modal on admin route
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null && !isAdminRoute;
 
   if (isInitializing) {
     return (
@@ -51,12 +41,9 @@ function RootLayout() {
   }
 
   return (
-    <>
-      <AppLayout>
-        <Outlet />
-      </AppLayout>
-      {showProfileSetup && <ProfileSetupModal open={showProfileSetup} />}
-    </>
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
   );
 }
 

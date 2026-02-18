@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restore-the-admin-capability-to-assign-the-blue-tick-verified-status-to-a-selected-user-from-the-admin-user-moderation-ui-ensuring-the-control-is-visible-and-functional-and-that-verification-is-reflected-anywhere-verified-badges-appear-profile-posts-stories-avatars",
-      "featureTitle": "Restore the Admin capability to assign the blue-tick “Verified” status to a selected user from the Admin user moderation UI, ensuring the control is visible and functional and that verification is reflected anywhere verified badges appear (profile, posts, stories, avatars).",
+      "featureId": "feature-remove-the-profilesetupmodal-component-and-all-its-imports-from-the-application",
+      "featureTitle": "Remove the ProfileSetupModal component and all its imports from the application",
       "files": [
-        "frontend/src/components/admin/AdminUserModerationPanel.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/profile/ProfileSetupModal.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -23,11 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-restore-admin-message-access-by-implementing-an-admin-only-read-only-view-of-a-selected-user-s-conversations-and-message-history-in-the-admin-user-management-flow-replacing-the-current-placeholder-that-says-conversations-cannot-be-viewed",
-      "featureTitle": "Restore Admin “message access” by implementing an Admin-only, read-only view of a selected user’s conversations and message history in the Admin user management flow (replacing the current placeholder that says conversations cannot be viewed).",
+      "featureId": "feature-remove-any-logic-that-triggers-or-checks-for-profile-completion-status",
+      "featureTitle": "Remove any logic that triggers or checks for profile completion status",
       "files": [
-        "frontend/src/components/admin/AdminUserConversationsPanel.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",
