@@ -155,6 +155,8 @@ export interface _SERVICE {
     [string, Array<[string, ExternalBlob]>, string, Principal],
     string
   >,
+  'deletePost' : ActorMethod<[string], undefined>,
+  'deleteStory' : ActorMethod<[string], undefined>,
   'expireStories' : ActorMethod<[], undefined>,
   'followUser' : ActorMethod<[Principal], undefined>,
   'getAllEvents' : ActorMethod<[], Array<Event>>,

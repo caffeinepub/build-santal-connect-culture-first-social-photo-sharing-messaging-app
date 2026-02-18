@@ -1,57 +1,82 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove profile completion popup",
+  "title": "Remove all user-uploaded photos and videos from backend and UI",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Remove the ProfileSetupModal component and all its imports from the application",
+      "id": "REQ-2",
+      "summary": "Add delete button to each media post card in the feed and profile views that allows users to remove their uploaded photos and videos",
       "acceptanceCriteria": [
-        "ProfileSetupModal component is completely removed from the codebase",
-        "No profile completion popup appears anywhere in the application",
-        "All references to ProfileSetupModal are removed from parent components"
+        "Delete button appears on PostCard components for media posts",
+        "Button is only visible to the post owner or admins",
+        "Clicking delete button triggers confirmation dialog",
+        "Button uses appropriate icon (trash/delete)",
+        "Button is styled consistently with existing UI"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/profile/ProfileSetupModal.tsx",
-          "operation": "delete",
-          "description": "Delete the ProfileSetupModal component file that displays the profile completion popup for first-time users"
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "path": "frontend/src/components/posts/PostCard.tsx",
           "operation": "modify",
-          "description": "Remove the import statement for ProfileSetupModal and remove any JSX rendering of the ProfileSetupModal component from the layout"
-        },
-        {
-          "path": "frontend/src/pages/FeedPage.tsx",
-          "operation": "modify",
-          "description": "Remove any import and usage of ProfileSetupModal component if present in the feed page"
+          "description": "Add conditional delete button (Trash2 icon from lucide-react) to PostCard component that appears only when the current user is the post author or an admin. The button should be positioned in the post header area alongside other post actions. Use the authorization component's pattern to check if the current user's principal matches the post.author principal or if isCallerAdmin returns true. Wire the delete button to trigger the confirmation dialog from REQ-3."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Remove any logic that triggers or checks for profile completion status",
+      "id": "REQ-3",
+      "summary": "Implement confirmation dialog before deleting media to prevent accidental deletion",
       "acceptanceCriteria": [
-        "No conditional logic exists that would show profile setup dialog",
-        "Application flow does not check for incomplete profiles",
-        "Users can access all features without being prompted to complete profile"
+        "Dialog shows clear warning message about permanent deletion",
+        "Dialog has 'Cancel' and 'Delete' buttons",
+        "Delete button is styled with destructive/danger variant",
+        "Dialog prevents action until user explicitly confirms",
+        "Dialog closes after action completes"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Remove any state variables, useEffect hooks, or conditional logic that checks whether a user profile exists and triggers the profile setup modal. Ensure the user can navigate the app without profile completion checks"
+          "path": "frontend/src/components/posts/DeletePostDialog.tsx",
+          "operation": "create",
+          "description": "Create a confirmation dialog component using shadcn/ui AlertDialog. The dialog should display a warning message about permanent deletion of the media post, with 'Cancel' and 'Delete' buttons. The Delete button should use the destructive variant for visual emphasis. Accept postId as a prop and expose open/onOpenChange props for state management. When confirmed, call the delete mutation hook from REQ-5 and close the dialog after the operation completes. Display loading state on the Delete button during mutation."
         },
         {
-          "path": "frontend/src/pages/FeedPage.tsx",
+          "path": "frontend/src/components/posts/PostCard.tsx",
           "operation": "modify",
-          "description": "Remove any conditional rendering logic that would show the ProfileSetupModal based on user profile status. Clean up any related state or query dependencies"
-        },
+          "description": "Import and integrate DeletePostDialog component. Add state to manage dialog open/closed state. Wire the delete button click handler to open the dialog. Pass the post.id to the dialog component."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Remove deleted media posts from UI immediately after successful deletion without requiring page refresh",
+      "acceptanceCriteria": [
+        "Deleted post disappears from feed immediately",
+        "Deleted post disappears from profile page immediately",
+        "React Query cache is invalidated for affected queries",
+        "Success toast notification appears after deletion",
+        "No orphaned UI elements remain after deletion"
+      ],
+      "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/posts/DeletePostDialog.tsx",
           "operation": "modify",
-          "description": "Review and remove any top-level profile completion checks or modal triggers that might affect application-wide navigation or access"
+          "description": "After successful deletion mutation, invalidate React Query caches for 'posts' and 'userPosts' query keys to trigger refetch on FeedPage and ProfilePage. Display a success toast notification using shadcn/ui toast component with message 'Post deleted successfully'. Handle error states with error toast notifications."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add delete mutation hook in useQueries.ts that calls the backend deletion method and handles loading/error states",
+      "acceptanceCriteria": [
+        "Mutation hook follows existing patterns in useQueries.ts",
+        "Hook handles loading state during deletion",
+        "Hook handles and displays error messages",
+        "Hook invalidates relevant queries on success",
+        "Hook returns mutation status for UI feedback"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add useDeletePost mutation hook following the existing mutation patterns in the file. The hook should accept postId as a parameter, call actor.deletePost(postId), handle loading/error states, and return mutation status. On successful deletion, invalidate the 'posts' query key and any user-specific post queries. Use useMutation from @tanstack/react-query and follow the error handling pattern used in other mutations (e.g., useCreatePost). The backend method deletePost already exists in the backend interface."
         }
       ]
     }

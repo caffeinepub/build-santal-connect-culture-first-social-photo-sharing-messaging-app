@@ -2,30 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-remove-the-profilesetupmodal-component-and-all-its-imports-from-the-application",
-      "featureTitle": "Remove the ProfileSetupModal component and all its imports from the application",
+      "featureId": "feature-add-delete-button-to-each-media-post-card-in-the-feed-and-profile-views-that-allows-users-to-remove-their-uploaded-photos-and-videos",
+      "featureTitle": "Add delete button to each media post card in the feed and profile views that allows users to remove their uploaded photos and videos",
       "files": [
-        "frontend/src/components/profile/ProfileSetupModal.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-remove-any-logic-that-triggers-or-checks-for-profile-completion-status",
-      "featureTitle": "Remove any logic that triggers or checks for profile completion status",
-      "files": [
-        "frontend/src/App.tsx"
+        "frontend/src/components/posts/PostCard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,6 +18,67 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-confirmation-dialog-before-deleting-media-to-prevent-accidental-deletion",
+      "featureTitle": "Implement confirmation dialog before deleting media to prevent accidental deletion",
+      "files": [
+        "frontend/src/components/posts/DeletePostDialog.tsx",
+        "frontend/src/components/posts/PostCard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-remove-deleted-media-posts-from-ui-immediately-after-successful-deletion-without-requiring-page-refresh",
+      "featureTitle": "Remove deleted media posts from UI immediately after successful deletion without requiring page refresh",
+      "files": [
+        "frontend/src/components/posts/DeletePostDialog.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-delete-mutation-hook-in-usequeries-ts-that-calls-the-backend-deletion-method-and-handles-loading-error-states",
+      "featureTitle": "Add delete mutation hook in useQueries.ts that calls the backend deletion method and handles loading/error states",
+      "files": [
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

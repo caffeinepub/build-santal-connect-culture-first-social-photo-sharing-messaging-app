@@ -3,14 +3,14 @@
   "frontend/src/config/highlights.ts": "Defines curated Highlights channel categories with metadata for the community content organization.",
   "frontend/src/config/stickers.ts": "Configuration for culturally themed stickers including sprite sheet positions and metadata.",
   "frontend/src/config/featuredCreators.ts": "Allowlist for featured creators in the Local Talent Showcase section.",
-  "frontend/src/hooks/useQueries.ts": "Comprehensive React Query hooks including mutations for adminSetVerified with proper cache invalidation for verified badges across all views (profiles, posts, stories), plus working hooks for admin conversation access (adminGetConversationList and adminGetConversation) that call the actual backend methods.",
+  "frontend/src/hooks/useQueries.ts": "Comprehensive React Query hooks including mutations for all backend operations, with new useDeletePost mutation that calls actor.deletePost and invalidates posts, eventPosts, and channelPosts query caches.",
   "frontend/src/App.tsx": "Main application component with TanStack Router setup, Internet Identity authentication gating, and all route definitions without profile setup modal logic.",
   "frontend/src/components/layout/AppLayout.tsx": "Shared layout component with header containing profile menu, Add Story button (authenticated users only), logout button, bottom navigation, footer, and Add Story dialog with proper responsive layout.",
   "frontend/src/components/layout/BottomNav.tsx": "Mobile-friendly bottom navigation bar with Reels tab replacing Create tab, conditional Admin navigation item visible only to admins, using useIsCallerAdmin hook.",
   "frontend/src/components/auth/LoginPanel.tsx": "Internet Identity-only login screen with single sign-in action, English error messaging, and logout support using useInternetIdentity hook.",
   "frontend/src/components/profile/ProfileSetupModal.tsx": "Profile setup modal requiring display name, country code, phone number, and location with validation, creating UserProfile with nested publicProfile structure including teacherBadge field set to false for new users.",
   "frontend/src/components/profile/AvatarUploader.tsx": "Avatar upload component with progress tracking using ExternalBlob, single-avatar replacement support with updated messaging, and image preview.",
-  "frontend/src/components/posts/PostCard.tsx": "Post card component displaying author avatar with verified and teacher badge overlays, showing both badges next to username when applicable, using public profile data.",
+  "frontend/src/components/posts/PostCard.tsx": "Post card component displaying author avatar with verified and teacher badge overlays, showing both badges next to username when applicable, with conditional delete button (Trash2 icon) visible only to post author or admins that triggers the DeletePostDialog confirmation flow.",
   "frontend/src/components/posts/CommentsPanel.tsx": "Comments display and input panel using public profile data via useGetUserPublicProfile hook for comment authors to avoid authorization errors with improved error handling.",
   "frontend/src/components/posts/UnicodeText.tsx": "Helper component for rendering Unicode text with proper font fallbacks for Ol Chiki support.",
   "frontend/src/components/messages/StickerPicker.tsx": "Popover-based sticker picker using sprite sheet with culturally themed stickers.",
@@ -57,5 +57,6 @@
   "frontend/src/components/stories/StoriesRow.tsx": "Horizontally scrollable Instagram-style stories row displaying viewer's story circle first with add affordance, followed by followed users' story circles with gradient rings and story counts, handling click events for add and view flows.",
   "frontend/src/components/stories/StoryViewerDialog.tsx": "Full-screen story viewer dialog with next/previous navigation, progress indicators, author info with verified badge, tap zones for mobile navigation, and timestamp display.",
   "frontend/src/components/common/TeacherBadge.tsx": "Reusable Teacher Badge component rendering a red circular badge with a mini book icon inside, including accessible English aria-label and title.",
-  "frontend/src/components/learn/LearnCreateContentDialog.tsx": "Dialog component for creating new lessons with title and content fields, form validation, submit loading state, and success/error toasts using the useAdminAddLesson hook."
+  "frontend/src/components/learn/LearnCreateContentDialog.tsx": "Dialog component for creating new lessons with title and content fields, form validation, submit loading state, and success/error toasts using the useAdminAddLesson hook.",
+  "frontend/src/components/posts/DeletePostDialog.tsx": "Confirmation dialog component using shadcn/ui AlertDialog that displays a warning message about permanent deletion, with Cancel and destructive Delete buttons, loading state during mutation, and success/error toast notifications."
 }

@@ -1,5 +1,5 @@
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
+import Bool "mo:core/Bool";
 import List "mo:core/List";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
@@ -10,26 +10,19 @@ import Set "mo:core/Set";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 
-
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-
-// Add migration clause - crucial for stability
-
 
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
-  // Define the fixed admin principal (replace with actual admin principal in deployment)
   let fixedAdminPrincipals = Set.singleton(Principal.fromText("aaaaa-aa"));
+  let storyExpiryDuration : Int = 24 * 60 * 60 * 1000000000;
 
-  let storyExpiryDuration : Int = 24 * 60 * 60 * 1000000000; // 24 hours in nanoseconds
-
-  // Story type
   public type Story = {
     id : Text;
     author : Principal;
@@ -73,17 +66,17 @@ actor {
   let userProfiles = Map.empty<Principal, UserProfile>();
   let bannedUsers = Set.empty<Principal>();
 
-  // Follow system
   let followingMap = Map.empty<Principal, Set.Set<Principal>>();
+  let studies = Map.empty<Text, Study>();
+  var nextStudyId = 0;
 
-  // --- Studies Module ---
   public type Study = {
     id : Text;
     name : Text;
     participants : Set.Set<Principal>;
     materials : Map.Map<Text, Storage.ExternalBlob>;
     schedule : ?Text;
-    instructor : Principal; // Added field for instructor
+    instructor : Principal;
   };
 
   public type StudyView = {
@@ -92,13 +85,9 @@ actor {
     participants : [Principal];
     materials : [(Text, Storage.ExternalBlob)];
     schedule : ?Text;
-    instructor : Principal; // Added field for instructor
+    instructor : Principal;
   };
 
-  let studies = Map.empty<Text, Study>();
-  var nextStudyId = 0;
-
-  // Convert Study to immutable view
   func toStudyView(study : Study) : StudyView {
     {
       study with
@@ -126,7 +115,6 @@ actor {
     studyId;
   };
 
-  // Query function returns stable immutable view
   public query ({ caller }) func getStudy(studyId : Text) : async ?StudyView {
     switch (studies.get(studyId)) {
       case (null) { null };
@@ -180,7 +168,6 @@ actor {
       case (?_) {
         switch (followingMap.get(caller)) {
           case (null) {
-            // Initialize new following set for caller
             let newSet = Set.singleton(target);
             followingMap.add(caller, newSet);
           };
@@ -210,7 +197,6 @@ actor {
               Runtime.trap("Not following this user");
             };
             followingSet.remove(target);
-            // Only update map if followingSet is not empty
             if (followingSet.size() > 0) {
               followingMap.add(caller, followingSet);
             };
@@ -260,19 +246,13 @@ actor {
   };
 
   public query ({ caller }) func getUserPublicProfile(target : Principal) : async ?PublicProfile {
-    // Public profiles are accessible to everyone (including guests)
     switch (userProfiles.get(target)) {
       case (null) { null };
       case (?profile) { ?profile.publicProfile };
     };
   };
 
-  // --- Follower and Following Retrieval Logic ---
-  // These functions allow any authenticated user to view followers/following lists
-  // for rendering on profile screens
   public query ({ caller }) func getFollowers(target : Principal) : async [Principal] {
-    // Allow any authenticated user (not just the target) to view followers
-    // This is needed for profile screens to display follower lists
     let followersList = List.empty<Principal>();
     for ((user, following) in followingMap.entries()) {
       if (following.contains(target)) {
@@ -283,20 +263,15 @@ actor {
   };
 
   public query ({ caller }) func getFollowing(target : Principal) : async [Principal] {
-    // Allow any authenticated user (not just the target) to view following lists
-    // This is needed for profile screens to display following lists
     switch (followingMap.get(target)) {
       case (null) { [] };
       case (?followingSet) { followingSet.values().toArray() };
     };
   };
 
-  // Core Story Methods
   let stories = Map.empty<Text, Story>();
-
   var nextStoryId = 0;
 
-  // Fetch current valid stories for caller feed
   public query ({ caller }) func getFeedStories() : async [Story] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view stories feed");
@@ -320,13 +295,15 @@ actor {
     validStories.toArray();
   };
 
-  // Core Create Story method (shared)
   public shared ({ caller }) func createStory(content : Storage.ExternalBlob, mediaType : PostMediaType) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Must be authenticated to create a story");
     };
 
-    // Check if user has a profile
+    if (bannedUsers.contains(caller)) {
+      Runtime.trap("User is banned");
+    };
+
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("User must have profile to create story") };
       case (?_) {};
@@ -382,6 +359,24 @@ actor {
     validStoryViews.toArray();
   };
 
+  public shared ({ caller }) func deleteStory(storyId : Text) : async () {
+    if (bannedUsers.contains(caller)) {
+      Runtime.trap("User is banned");
+    };
+
+    switch (stories.get(storyId)) {
+      case (null) {
+        Runtime.trap("Story not found");
+      };
+      case (?story) {
+        if (not (AccessControl.isAdmin(accessControlState, caller) or story.author == caller)) {
+          Runtime.trap("Unauthorized: Only the story author or admin can delete this story");
+        };
+        stories.remove(storyId);
+      };
+    };
+  };
+
   public shared ({ caller }) func expireStories() : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can expire stories");
@@ -406,10 +401,13 @@ actor {
       Runtime.trap("Unauthorized: Only users can update avatars");
     };
 
+    if (bannedUsers.contains(caller)) {
+      Runtime.trap("User is banned");
+    };
+
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("User profile not found") };
       case (?profile) {
-        // Directly update avatar (handles both adding/replacing and removal)
         let updatedProfile = {
           profile with
           publicProfile = {
@@ -422,9 +420,6 @@ actor {
     };
   };
 
-  // --- End Follow System Changes ---
-
-  // Admin only: Apply verified status (blue tick)
   public shared ({ caller }) func adminSetVerified(user : Principal, verified : Bool) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can verify users");
@@ -491,18 +486,15 @@ actor {
     };
   };
 
-  // Save profile with admin bootstrap and validation
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (bannedUsers.contains(caller)) {
       Runtime.trap("User is banned");
     };
 
-    // Validate required fields
     if (profile.publicProfile.displayName == "" or profile.phone == "" or profile.countryCode == "") {
       Runtime.trap("Name, country code and phone must not be empty");
     };
 
-    // Validate location is provided (required by UI)
     switch (profile.publicProfile.location) {
       case (null) { Runtime.trap("Location must be provided") };
       case (?loc) {
@@ -512,21 +504,16 @@ actor {
       };
     };
 
-    // Save the profile
     userProfiles.add(caller, profile);
 
-    // Admin bootstrap: Grant admin role to fixed admin principals on first profile save
     let currentRole = AccessControl.getUserRole(accessControlState, caller);
     if (currentRole == #guest) {
       if (fixedAdminPrincipals.contains(caller)) {
-        // Bootstrap fixed admin
         AccessControl.assignRole(accessControlState, caller, caller, #admin);
       } else {
-        // Regular user
         AccessControl.assignRole(accessControlState, caller, caller, #user);
       };
     };
-    // If already has a role (including admin), keep it - this allows admins to edit profiles
   };
 
   public shared ({ caller }) func adminBanUser(user : Principal) : async () {
@@ -725,12 +712,10 @@ actor {
     };
   };
 
-  // Public post listing - accessible to all users including guests
   public query ({ caller }) func getPosts() : async [PostView] {
     posts.toArray().map(func((id, p)) { toPostView(id, p) });
   };
 
-  // Messaging
   public type Message = {
     sender : Principal;
     content : Text;
@@ -815,7 +800,6 @@ actor {
     switch (conversations.get(conversationId)) {
       case (null) { null };
       case (?conversation) {
-        // Verify caller is a participant
         let isParticipant = conversation.participants.find(
           func(p : Principal) : Bool { p == caller }
         );
@@ -827,7 +811,6 @@ actor {
     };
   };
 
-  // Admin-only: Get entire conversation (no check for "Is participant")
   public query ({ caller }) func adminGetConversation(_adminTargetUser : Principal, otherUser : Principal) : async ?ConversationView {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can access any conversation");
@@ -839,7 +822,6 @@ actor {
     };
   };
 
-  // Util functions to allow admin to get full conversation list for a user
   public query ({ caller }) func adminGetConversationList(targetUser : Principal) : async [Principal] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can access any conversation");
@@ -847,7 +829,6 @@ actor {
 
     let result = List.empty<Principal>();
     for ((convId, conv) in conversations.entries()) {
-      // Only include conversations where targetUser is a participant
       let isParticipant = conv.participants.find(
         func(p) { p == targetUser }
       );
@@ -869,7 +850,6 @@ actor {
     result.toArray();
   };
 
-  // Util get conversation id
   func getConversationId(user1 : Principal, user2 : Principal) : Text {
     let id1 = user1.toText();
     let id2 = user2.toText();
@@ -909,7 +889,6 @@ actor {
   };
 
   public query ({ caller }) func getChannelPosts(channelName : Text) : async [PostView] {
-    // Public content - accessible to all including guests
     switch (channels.get(channelName)) {
       case (null) { Array.empty<PostView>() };
       case (?channel) {
@@ -937,7 +916,6 @@ actor {
     lessons.add(title, newLesson);
   };
 
-  // Learning Corner (lessons)
   public type Lesson = {
     title : Text;
     content : Text;
@@ -947,12 +925,10 @@ actor {
   let lessons = Map.empty<Text, Lesson>();
 
   public query ({ caller }) func getLesson(title : Text) : async ?Lesson {
-    // Public educational content - accessible to all including guests
     lessons.get(title);
   };
 
   public query ({ caller }) func getAllLessons() : async [Lesson] {
-    // Public educational content - accessible to all including guests
     lessons.values().toArray();
   };
 
@@ -973,7 +949,6 @@ actor {
     };
   };
 
-  // Events
   public type Event = {
     name : Text;
     date : Time.Time;
@@ -998,16 +973,13 @@ actor {
   };
 
   public query ({ caller }) func getEvent(name : Text) : async ?Event {
-    // Public event information - accessible to all including guests
     events.get(name);
   };
 
   public query ({ caller }) func getAllEvents() : async [Event] {
-    // Public event information - accessible to all including guests
     events.values().toArray();
   };
 
-  // Event posts (extended post type support) - now store post IDs
   let eventPosts = Map.empty<Text, List.List<Text>>();
 
   public shared ({ caller }) func createEventPost(eventName : Text, caption : Text, media : ?Storage.ExternalBlob, mediaType : PostMediaType) : async Text {
@@ -1019,19 +991,16 @@ actor {
       Runtime.trap("User is banned");
     };
 
-    // Check if event exists
     switch (events.get(eventName)) {
       case (null) { Runtime.trap("Event does not exist") };
       case (?_) {};
     };
 
-    // Check user has profile
     switch (userProfiles.get(caller)) {
       case (null) { Runtime.trap("User must have profile to create event post") };
       case (?_) {};
     };
 
-    // Create the new post
     let postId = nextPostId.toText();
     let newPost : Post = {
       author = caller;
@@ -1061,5 +1030,72 @@ actor {
     posts.add(postId, newPost);
     nextPostId += 1;
     postId;
+  };
+
+  public shared ({ caller }) func deletePost(postId : Text) : async () {
+    if (bannedUsers.contains(caller)) {
+      Runtime.trap("User is banned");
+    };
+
+    switch (posts.get(postId)) {
+      case (null) {
+        Runtime.trap("Post not found");
+      };
+      case (?post) {
+        if (not (AccessControl.isAdmin(accessControlState, caller) or post.author == caller)) {
+          Runtime.trap("Unauthorized: Only the post author or admin can delete this post");
+        };
+
+        // Remove from event posts if it's an event post
+        switch (post.eventName) {
+          case (?eventName) {
+            switch (eventPosts.get(eventName)) {
+              case (null) {};
+              case (?postIdsList) {
+                let filteredList = List.empty<Text>();
+                for (id in postIdsList.values()) {
+                  if (id != postId) {
+                    filteredList.add(id);
+                  };
+                };
+                if (filteredList.size() > 0) {
+                  eventPosts.add(eventName, filteredList);
+                } else {
+                  eventPosts.remove(eventName);
+                };
+              };
+            };
+          };
+          case (null) {};
+        };
+
+        // Remove from channels
+        for ((channelName, channel) in channels.entries()) {
+          let filteredPostIds = List.empty<Text>();
+          var found = false;
+          for (id in channel.postIds.values()) {
+            if (id == postId) {
+              found := true;
+            } else {
+              filteredPostIds.add(id);
+            };
+          };
+          if (found) {
+            if (filteredPostIds.size() > 0) {
+              let updatedChannel : Channel = {
+                name = channelName;
+                postIds = filteredPostIds;
+              };
+              channels.add(channelName, updatedChannel);
+            } else {
+              channels.remove(channelName);
+            };
+          };
+        };
+
+        // Finally remove the post itself
+        posts.remove(postId);
+      };
+    };
   };
 };

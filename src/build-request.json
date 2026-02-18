@@ -1,57 +1,124 @@
 {
   "kind": "build_request",
-  "title": "Remove profile completion popup",
-  "projectName": "Social Community",
-  "priority": "normal",
+  "title": "Remove all user-uploaded photos and videos from backend and UI",
+  "projectName": "Santal Connect",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove the ProfileSetupModal component and all its imports from the application",
-      "target": "frontend",
+      "text": "Add backend deletion method to permanently remove user-uploaded media (images and videos) from blob storage and associated metadata from the posts data structure",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-15",
-          "msg-17"
+          "msg-recent"
         ],
         "quotes": [
-          "Complete your profile pop up Wala bhi hata dijiye",
-          "Hn wahi hai aur ye popup ab kahi nahi dikhna chahiye"
+          "User ke dwara upload ki Gai sari photos video",
+          "Uploaded media files ko backend se remove"
         ]
       },
       "acceptanceCriteria": [
-        "ProfileSetupModal component is completely removed from the codebase",
-        "No profile completion popup appears anywhere in the application",
-        "All references to ProfileSetupModal are removed from parent components"
+        "Backend method accepts post ID or media identifier as parameter",
+        "Method deletes the blob data from storage",
+        "Method removes post metadata containing the media reference",
+        "Method returns success/error status",
+        "Only the post owner or admin can delete the media"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Remove any logic that triggers or checks for profile completion status",
+      "text": "Add delete button to each media post card in the feed and profile views that allows users to remove their uploaded photos and videos",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-17"
+          "msg-recent"
         ],
         "quotes": [
-          "ye popup ab kahi nahi dikhna chahiye"
+          "UI se bhi unhein hata dena",
+          "Delete button har media item ke saath"
         ]
       },
       "acceptanceCriteria": [
-        "No conditional logic exists that would show profile setup dialog",
-        "Application flow does not check for incomplete profiles",
-        "Users can access all features without being prompted to complete profile"
+        "Delete button appears on PostCard components for media posts",
+        "Button is only visible to the post owner or admins",
+        "Clicking delete button triggers confirmation dialog",
+        "Button uses appropriate icon (trash/delete)",
+        "Button is styled consistently with existing UI"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Implement confirmation dialog before deleting media to prevent accidental deletion",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Confirmation dialog accidental deletion se bachne ke liye"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Dialog shows clear warning message about permanent deletion",
+        "Dialog has 'Cancel' and 'Delete' buttons",
+        "Delete button is styled with destructive/danger variant",
+        "Dialog prevents action until user explicitly confirms",
+        "Dialog closes after action completes"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Remove deleted media posts from UI immediately after successful deletion without requiring page refresh",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "UI se deleted items ko turant remove karna"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Deleted post disappears from feed immediately",
+        "Deleted post disappears from profile page immediately",
+        "React Query cache is invalidated for affected queries",
+        "Success toast notification appears after deletion",
+        "No orphaned UI elements remain after deletion"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add delete mutation hook in useQueries.ts that calls the backend deletion method and handles loading/error states",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Backend (Motoko) mein media deletion logic implement karunga"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Mutation hook follows existing patterns in useQueries.ts",
+        "Hook handles loading state during deletion",
+        "Hook handles and displays error messages",
+        "Hook invalidates relevant queries on success",
+        "Hook returns mutation status for UI feedback"
       ]
     }
   ],
   "constraints": [
-    "Do not modify Internet Identity hooks or authentication components",
-    "Maintain existing public access configuration",
-    "Preserve all other user interface components and functionality"
+    "Do not modify the single-actor architecture in backend/main.mo",
+    "Do not edit immutable frontend paths: useInternetIdentity.ts, useInternetIdentity.tsx, useActor.ts, main.tsx, components/ui",
+    "Maintain compatibility with existing blob storage system",
+    "Preserve admin controls and access permissions"
   ],
   "nonGoals": [
-    "Adding alternative profile setup mechanisms",
-    "Modifying backend profile data structures",
-    "Changing any other authentication or access control features"
+    "Bulk delete functionality for multiple posts at once",
+    "Soft delete or trash/recycle bin features",
+    "Delete history or undo functionality",
+    "Scheduled or automated deletion",
+    "Media archive or backup features"
   ],
   "imageRequirements": {
     "required": [],

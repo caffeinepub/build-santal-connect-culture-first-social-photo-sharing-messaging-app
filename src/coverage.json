@@ -1,51 +1,83 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T20:11:37.495Z",
+  "generatedAt": "2026-02-18T20:53:13.441Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 5,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Remove the ProfileSetupModal component and all its imports from the application",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/profile/ProfileSetupModal.tsx",
-          "frontend/src/components/layout/AppLayout.tsx",
-          "frontend/src/pages/FeedPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/profile/ProfileSetupModal.tsx"
-        ]
+        "summary": "Add backend deletion method to permanently remove user-uploaded media (images and videos) from blob storage and associated metadata from the posts data structure",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Remove any logic that triggers or checks for profile completion status",
+        "summary": "Add delete button to each media post card in the feed and profile views that allows users to remove their uploaded photos and videos",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/layout/AppLayout.tsx",
-          "frontend/src/pages/FeedPage.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/posts/PostCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/components/posts/PostCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement confirmation dialog before deleting media to prevent accidental deletion",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/posts/DeletePostDialog.tsx",
+          "frontend/src/components/posts/PostCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/posts/DeletePostDialog.tsx",
+          "frontend/src/components/posts/PostCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Remove deleted media posts from UI immediately after successful deletion without requiring page refresh",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/posts/DeletePostDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/posts/DeletePostDialog.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add delete mutation hook in useQueries.ts that calls the backend deletion method and handles loading/error states",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/profile/ProfileSetupModal.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/posts/DeletePostDialog.tsx",
+    "frontend/src/components/posts/PostCard.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

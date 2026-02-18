@@ -512,6 +512,24 @@ export function useAddComment() {
   });
 }
 
+export function useDeletePost() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deletePost(postId);
+    },
+    onSuccess: () => {
+      // Invalidate all post-related queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['eventPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['channelPosts'] });
+    },
+  });
+}
+
 // Channels
 export function useGetChannelPosts(channelName: string) {
   const { actor, isFetching: actorFetching } = useActor();
@@ -548,7 +566,187 @@ export function useAdminAddPostToChannel() {
   });
 }
 
-// Lessons
+// Messages
+export function useSendMessage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ receiver, content }: { receiver: Principal; content: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.sendMessage(receiver, content);
+    },
+    onSuccess: (_, { receiver }) => {
+      queryClient.invalidateQueries({ queryKey: ['conversation', receiver.toString()] });
+    },
+  });
+}
+
+export function useGetConversation(otherUser: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<ConversationView | null>({
+    queryKey: ['conversation', otherUser?.toString()],
+    queryFn: async () => {
+      if (!actor || !otherUser) return null;
+      try {
+        return await actor.getConversation(otherUser);
+      } catch (error) {
+        console.error(`Failed to fetch conversation with ${otherUser.toString()}:`, error);
+        return null;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!otherUser,
+    retry: false,
+    refetchInterval: 3000,
+  });
+}
+
+// Follow/Unfollow
+export function useFollowUser() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (target: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.followUser(target);
+    },
+    onSuccess: (_, target) => {
+      queryClient.invalidateQueries({ queryKey: ['isFollowing', target.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['followers', target.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
+      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
+    },
+  });
+}
+
+export function useUnfollowUser() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (target: Principal) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.unfollowUser(target);
+    },
+    onSuccess: (_, target) => {
+      queryClient.invalidateQueries({ queryKey: ['isFollowing', target.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['followers', target.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
+      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
+    },
+  });
+}
+
+export function useIsFollowing(target: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isFollowing', target?.toString()],
+    queryFn: async () => {
+      if (!actor || !target) return false;
+      try {
+        return await actor.isFollowing(target);
+      } catch (error) {
+        console.error(`Failed to check following status for ${target.toString()}:`, error);
+        return false;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!target,
+    retry: false,
+  });
+}
+
+export function useGetFollowers(target: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Principal[]>({
+    queryKey: ['followers', target?.toString()],
+    queryFn: async () => {
+      if (!actor || !target) return [];
+      try {
+        return await actor.getFollowers(target);
+      } catch (error) {
+        console.error(`Failed to fetch followers for ${target.toString()}:`, error);
+        return [];
+      }
+    },
+    enabled: !!actor && !actorFetching && !!target,
+    retry: false,
+  });
+}
+
+export function useGetFollowing(target: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<Principal[]>({
+    queryKey: ['following', target?.toString()],
+    queryFn: async () => {
+      if (!actor || !target) return [];
+      try {
+        return await actor.getFollowing(target);
+      } catch (error) {
+        console.error(`Failed to fetch following for ${target.toString()}:`, error);
+        return [];
+      }
+    },
+    enabled: !!actor && !actorFetching && !!target,
+    retry: false,
+  });
+}
+
+// Stories
+export function useGetFeedStoryViews() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<StoryView[]>({
+    queryKey: ['feedStoryViews'],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getFeedStoryViews();
+      } catch (error) {
+        console.error('Failed to fetch story views:', error);
+        return [];
+      }
+    },
+    enabled: !!actor && !actorFetching,
+    retry: false,
+  });
+}
+
+export function useCreateStory() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ content, mediaType }: { content: ExternalBlob; mediaType: PostMediaType }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createStory(content, mediaType);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
+    },
+  });
+}
+
+export function useDeleteStory() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (storyId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteStory(storyId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
+    },
+  });
+}
+
+// Learning
 export function useGetAllLessons() {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -653,169 +851,5 @@ export function useAdminAddEvent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-  });
-}
-
-// Stories
-export function useGetFeedStoryViews() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<StoryView[]>({
-    queryKey: ['feedStoryViews'],
-    queryFn: async () => {
-      if (!actor) return [];
-      try {
-        return await actor.getFeedStoryViews();
-      } catch (error) {
-        console.error('Failed to fetch story views:', error);
-        return [];
-      }
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-}
-
-export function useCreateStory() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ content, mediaType }: { content: ExternalBlob; mediaType: PostMediaType }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createStory(content, mediaType);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
-    },
-  });
-}
-
-// Messaging
-export function useGetConversation(otherUser: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<ConversationView | null>({
-    queryKey: ['conversation', otherUser?.toString()],
-    queryFn: async () => {
-      if (!actor || !otherUser) return null;
-      try {
-        return await actor.getConversation(otherUser);
-      } catch (error) {
-        console.error(`Failed to fetch conversation with ${otherUser.toString()}:`, error);
-        return null;
-      }
-    },
-    enabled: !!actor && !actorFetching && !!otherUser,
-    retry: false,
-  });
-}
-
-export function useSendMessage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ receiver, content }: { receiver: Principal; content: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.sendMessage(receiver, content);
-    },
-    onSuccess: (_, { receiver }) => {
-      queryClient.invalidateQueries({ queryKey: ['conversation', receiver.toString()] });
-    },
-  });
-}
-
-// Follow System
-export function useIsFollowing(target: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['isFollowing', target?.toString()],
-    queryFn: async () => {
-      if (!actor || !target) return false;
-      try {
-        return await actor.isFollowing(target);
-      } catch (error) {
-        console.error(`Failed to check following status for ${target.toString()}:`, error);
-        return false;
-      }
-    },
-    enabled: !!actor && !actorFetching && !!target,
-    retry: false,
-  });
-}
-
-export function useFollowUser() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (target: Principal) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.followUser(target);
-    },
-    onSuccess: (_, target) => {
-      queryClient.invalidateQueries({ queryKey: ['isFollowing', target.toString()] });
-      queryClient.invalidateQueries({ queryKey: ['followers'] });
-      queryClient.invalidateQueries({ queryKey: ['following'] });
-      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
-    },
-  });
-}
-
-export function useUnfollowUser() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (target: Principal) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.unfollowUser(target);
-    },
-    onSuccess: (_, target) => {
-      queryClient.invalidateQueries({ queryKey: ['isFollowing', target.toString()] });
-      queryClient.invalidateQueries({ queryKey: ['followers'] });
-      queryClient.invalidateQueries({ queryKey: ['following'] });
-      queryClient.invalidateQueries({ queryKey: ['feedStoryViews'] });
-    },
-  });
-}
-
-export function useGetFollowers(target: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Principal[]>({
-    queryKey: ['followers', target?.toString()],
-    queryFn: async () => {
-      if (!actor || !target) return [];
-      try {
-        return await actor.getFollowers(target);
-      } catch (error) {
-        console.error(`Failed to fetch followers for ${target.toString()}:`, error);
-        return [];
-      }
-    },
-    enabled: !!actor && !actorFetching && !!target,
-    retry: false,
-  });
-}
-
-export function useGetFollowing(target: Principal | null) {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  return useQuery<Principal[]>({
-    queryKey: ['following', target?.toString()],
-    queryFn: async () => {
-      if (!actor || !target) return [];
-      try {
-        return await actor.getFollowing(target);
-      } catch (error) {
-        console.error(`Failed to fetch following for ${target.toString()}:`, error);
-        return [];
-      }
-    },
-    enabled: !!actor && !actorFetching && !!target,
-    retry: false,
   });
 }

@@ -221,6 +221,8 @@ export interface backendInterface {
     createPost(caption: string, media: ExternalBlob | null, mediaType: PostMediaType): Promise<string>;
     createStory(content: ExternalBlob, mediaType: PostMediaType): Promise<string>;
     createStudy(name: string, materials: Array<[string, ExternalBlob]>, schedule: string, instructor: Principal): Promise<string>;
+    deletePost(postId: string): Promise<void>;
+    deleteStory(storyId: string): Promise<void>;
     expireStories(): Promise<void>;
     followUser(target: Principal): Promise<void>;
     getAllEvents(): Promise<Array<Event>>;
@@ -629,6 +631,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createStudy(arg0, await to_candid_vec_n19(this._uploadFile, this._downloadFile, arg1), arg2, arg3);
+            return result;
+        }
+    }
+    async deletePost(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deletePost(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deletePost(arg0);
+            return result;
+        }
+    }
+    async deleteStory(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteStory(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteStory(arg0);
             return result;
         }
     }

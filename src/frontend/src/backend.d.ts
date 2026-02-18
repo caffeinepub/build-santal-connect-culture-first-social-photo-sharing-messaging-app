@@ -128,6 +128,8 @@ export interface backendInterface {
     createPost(caption: string, media: ExternalBlob | null, mediaType: PostMediaType): Promise<string>;
     createStory(content: ExternalBlob, mediaType: PostMediaType): Promise<string>;
     createStudy(name: string, materials: Array<[string, ExternalBlob]>, schedule: string, instructor: Principal): Promise<string>;
+    deletePost(postId: string): Promise<void>;
+    deleteStory(storyId: string): Promise<void>;
     expireStories(): Promise<void>;
     followUser(target: Principal): Promise<void>;
     getAllEvents(): Promise<Array<Event>>;
